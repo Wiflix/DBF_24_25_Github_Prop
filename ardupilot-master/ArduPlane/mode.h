@@ -68,6 +68,7 @@ public:
 #if MODE_AUTOLAND_ENABLED
         AUTOLAND      = 26,
 #endif
+        CUSTOM_MODE = 27;
 
     // Mode number 30 reserved for "offboard" for external/lua control.
     };
@@ -901,6 +902,77 @@ protected:
     uint8_t stage;
 };
 #endif
+
+class ModeCustom : public Mode
+{
+public:
+    friend class Plane;
+
+    Number mode_number() const override { return Number::AUTO; }
+    const char *name() const override { return "AUTO"; }
+    const char *name4() const override { return "AUTO"; }
+
+    bool does_automatic_thermal_switch() const override { return true; }
+
+    // methods that affect movement of the vehicle in this mode
+    void update() override;
+
+    void navigate() override;
+
+    bool allows_throttle_nudging() const override { return true; }
+
+    bool does_auto_navigation() const override;
+
+    bool does_auto_throttle() const override;
+    
+    bool mode_allows_autotuning() const override { return true; }
+
+    bool is_landing() const override;
+
+    void do_nav_delay(const AP_Mission::Mission_Command& cmd);
+    bool verify_nav_delay(const AP_Mission::Mission_Command& cmd);
+
+    bool verify_altitude_wait(const AP_Mission::Mission_Command& cmd);
+
+    void run() override;
+
+    int loc_2_pN_VanNuys(Location loc);
+    int loc_2_pE_VanNuys(Location loc);
+    int pN_pE_VanNuys_2_lng(int pN, int pE);
+    int pN_pE_VanNuys_2_lat(int pN, int pE);
+//I am defining the directions N/E as E facing perpendicular to the runway away from pilot, and N being 90 deg left of E. 
+//Origin is center of the runway, lined up with center of bonus box.
+
+#if AP_PLANE_GLIDER_PULLUP_ENABLED
+    bool in_pullup() const { return pullup.in_pullup(); }
+#endif
+
+protected:
+
+    bool _enter() override;
+    void _exit() override;
+    bool _pre_arm_checks(size_t buflen, char *buffer) const override;
+
+private:
+
+    // Delay the next navigation command
+    struct {
+        uint32_t time_max_ms;
+        uint32_t time_start_ms;
+    } nav_delay;
+
+    // wiggle state and timer for NAV_ALTITUDE_WAIT
+    void wiggle_servos();
+    struct {
+        uint8_t stage;
+        uint32_t last_ms;
+    } wiggle;
+
+#if AP_PLANE_GLIDER_PULLUP_ENABLED
+    GliderPullup pullup;
+#endif // AP_PLANE_GLIDER_PULLUP_ENABLED
+};
+
 #if HAL_SOARING_ENABLED
 
 class ModeThermal: public Mode
