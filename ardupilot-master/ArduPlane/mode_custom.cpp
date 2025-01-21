@@ -23,8 +23,9 @@ bool ModeCustom::_enter()
 #else
     plane.auto_state.vtol_mode = false;
 #endif
-    boolean turnFlag = 0; //This will change to 1 once turn is started
+    plane.turnFlag = false; //This will change to true once turn is started
     plane.next_WP_loc = plane.prev_WP_loc = plane.current_loc; //start with: waypoint location way far out. Then once turn flag is activated, change these vars to make waypoint to the side
+    //define the mission in MP as follows: waypoint 1 far out, waypoint 2 in the bonus box
     // start or resume the mission, based on MIS_AUTORESET
     plane.mission.start_or_resume();
 
@@ -122,7 +123,27 @@ void ModeCustom::update()
         plane.calc_throttle();
 
         //NEW CODE:
-        int distance_to_box_center = 1.25*pi*50*plane.current_loc.;
+        //pretty much wayguid.m
+        if(plane.turnFlag==false){
+            double pN = loc_2_pN_VanNuys(plane.current_loc);
+            double pE = loc_2_pE_VanNuys(plane.current_loc);
+            double distance_to_box_center = 1.25*pi*50*pN;
+            double alt_ft = plane.current_loc.alt/30.48; //convert cm to ft
+            double dist_to_ground = alt_ft/tan(-plane.GS_com);
+            if(abs(distance_to_box_center-dist_to_ground)<50){
+                plane.turnFlag=true;
+                //set wp loc
+                double wpNew_pE = 150;
+                double wpNew_pN = pN-100;
+                double new_alt = 50; //placeholder
+                Location::AltFrame altFrame = plane.current_loc.get_alt_frame;
+                Location locNew = Location(pN_pE_VanNuys_2_lat(pN,pE),pN_pE_VanNuys_2_lng(pN,pE), new_Alt, altFrame);
+                plane.set_next_WP(locNew);
+                Vector3f velNED;
+                ahrs.get_velocity_NED(velNED); //FIND WAY TO GET NED VELOCITY VECTOR. This gets us descent rate and speed, which is what we need for GS control
+
+            }
+        }
     }
 }
 
@@ -205,16 +226,49 @@ void ModeCustom::run()
 
     }
 }
-
-int loc_2_pN_VanNuys(Location loc){
+//NOTE: pN and pE aren't actually N/E positions. They are defined relative to the runway position and orientation. pN is along runway with bonus box to the right, and pE is 90 deg of that
+double loc_2_pN_VanNuys(Location loc){
+    double heading = -38.09; //in degrees, how many degrees east of north runway is (bonus box to the right of runway if runway at 0 deg)
+    double home_lat = 34.17535989 *3.14159265/180; // in rad
+    double home_long = -118.4818518*3.14159265/180; //in rad
+    double current_lat = loc.lat/1e7 * *3.14159265/180; // in rad
+    double current_long = loc.lng/1e7 * *3.14159265/180; // in rad
+    double R = 20903520; // earth's radius in feet
+    double delta_east = R*cos(home_lat)* (current_long-home_long); //distance east of home in ft.
+    double delta_north = R*(current_lat-home_lat); //distance north of home in ft
+    double pN = -delta_east*sin(-heading)+delta_north*cos(-heading);
+    return pN;
 
 }
-int loc_2_pE_VanNuys(Location loc){
-
+double loc_2_pE_VanNuys(Location loc){
+    double heading = -38.09; //in degrees, how many degrees east of north runway is (bonus box to the right of runway if runway at 0 deg)
+    double home_lat = 34.17535989 *3.14159265/180; // in rad
+    double home_long = -118.4818518*3.14159265/180; //in rad
+    double current_lat = loc.lat/1e7 *3.14159265/180; // in rad
+    double current_long = loc.lng/1e7 *3.14159265/180; // in rad
+    double R = 20903520; // earth's radius in feet
+    double delta_east = R*cos(home_lat)* (current_long-home_long); //distance east of home in ft.
+    double delta_north = R*(current_lat-home_lat); //distance north of home in ft
+    double pE = delta_east*cos(-heading)+delta_north*sin(-heading);
+    return pE;
 }
-int pN_pE_VanNuys_2_lng(int pN, int pE){
-
+int32_t pN_pE_VanNuys_2_lng(double pN, double pE){
+    double heading = -38.09; //in degrees, how many degrees east of north runway is (bonus box to the right of runway if runway at 0 deg)
+    double home_lat = 34.17535989 *3.14159265/180; // in rad
+    double home_long = -118.4818518*3.14159265/180; //in rad
+    double R = 20903520; // earth's radius in feet
+    double delta_east = pE*cos(heading)+pN*sin(heading);
+    //delta_north = -pN*sin(heading)+pN*cos(heading);
+    double current_long = home_long+delta_east/(R*cos(home_lat));
+    return (int32_t)round(current_long*1e7*180/3.14159265);
 }
-int pN_pE_VanNuys_2_lat(int pN, int pE){
-    
+int32_t pN_pE_VanNuys_2_lat(double pN, double pE){
+    double heading = -38.09; //in degrees, how many degrees east of north runway is (bonus box to the right of runway if runway at 0 deg)
+    double home_lat = 34.17535989 *3.14159265/180; // in rad
+    double ome_long = -118.4818518*3.14159265/180; //in rad
+    double R = 20903520; // earth's radius in feet
+    //delta_east = pE*cos(heading)+pN*sin(heading);
+    double delta_north = -pN*sin(heading)+pN*cos(heading);
+    double current_lat = home_lat+delta_north/R;
+    return (int32_t)round(current_lat*1e7*180/3.1415926);
 }

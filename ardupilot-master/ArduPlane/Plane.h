@@ -773,6 +773,9 @@ private:
 
     // The location of the current/active waypoint.  Used for altitude ramp, track following and loiter calculations.
     Location next_WP_loc {};
+    //NEW CODE:
+    bool turnFlag;
+    double GS_com = -10*3.141592/180; //in radians
 
     // Altitude control
     struct {
