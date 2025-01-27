@@ -113,15 +113,16 @@ function update()
       local dist_to_ground = alt_ft/math.tan(-GS_com);
       if math.abs(distance_to_box_center-dist_to_ground)<50 then
           turnFlag=1;
-          //set wp loc
+          --set wp loc
           local wpNew_pE = 150;
           local wpNew_pN = pN-100;
           local new_alt = 50; --placeholder
           --Location::AltFrame altFrame = plane.current_loc.get_alt_frame;
-          Location locNew = Location(pN_pE_VanNuys_2_lat(pN,pE),pN_pE_VanNuys_2_lng(pN,pE), new_Alt, altFrame);
-          plane.set_next_WP(locNew);
-          Vector3f velNED;
-          ahrs.get_velocity_NED(velNED); //FIND WAY TO GET NED VELOCITY VECTOR. This gets us descent rate and speed, which is what we need for GS control
+          local locNew = current_pos--Location(pN_pE_VanNuys_2_lat(pN,pE),pN_pE_VanNuys_2_lng(pN,pE), new_Alt, altFrame);
+          locNew:lng(pN_pE_VanNuys_2_lng(pN,pE))
+          locNew:lat(pN_pE_VanNuys_2_lat(pN,pE))
+          vehicle:set_target_location(locNew)
+          local velNED = ahrs:get_velocity_NED() --//FIND WAY TO GET NED VELOCITY VECTOR. This gets us descent rate and speed, which is what we need for GS control
 
       end   
    end
