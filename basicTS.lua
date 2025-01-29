@@ -1,6 +1,7 @@
 
 function update()
    gcs:send_text(0, "hello, world") -- send the traditional message
+   print("hello world print")
    local current_pos = ahrs:get_position() -- fetch the current position of the vehicle
    local home = ahrs:get_home()            -- fetch the home position of the vehicle
    if current_pos and home then            -- check that both a vehicle location, and home location are available
@@ -22,8 +23,10 @@ function update()
    gcs:send_text(0, velNED:x())
    gcs:send_text(0, velNED:y())
    gcs:send_text(0, velNED:z())
+   print(alt_ft)
+   print("printing alt")
      
-   return update, 1000 -- request "update" to be rerun again 1000 milliseconds (1 second) from now
+   return update(), 1000 -- request "update" to be rerun again 1000 milliseconds (1 second) from now
 end
-return update, 1000
+return update(), 1000
 
