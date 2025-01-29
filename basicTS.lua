@@ -7,9 +7,9 @@ function update()
      -- servo.set_output_pwm(96, 1000 + distance) -- set the servo assigned function 96 (scripting3) to a proportional value
    local pN = current_pos:lng()
    local pE = current_pos:lat()
-   local distance_to_box_center = 1.25*3.14*50*pN;
+   local distance_to_box_center = 1.25*3.14*50*pN
    local alt_ft = current_pos:alt() --/30.48; --convert cm to ft
-   local dist_to_ground = alt_ft/math.tan(-10*3.14/180);
+   local dist_to_ground = alt_ft/math.tan(-10*3.14/180)
    local velNED = ahrs:get_velocity_NED()
    --gcs:send_text(0, alt_ft)
   -- gcs:send_text(0, pN)
