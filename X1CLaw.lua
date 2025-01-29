@@ -122,7 +122,13 @@ function update()
           locNew:lng(pN_pE_VanNuys_2_lng(pN,pE))
           locNew:lat(pN_pE_VanNuys_2_lat(pN,pE))
           vehicle:set_target_location(locNew)
-          local velNED = ahrs:get_velocity_NED() --//FIND WAY TO GET NED VELOCITY VECTOR. This gets us descent rate and speed, which is what we need for GS control
+         --local velNED = ahrs:get_velocity_NED() --ahrs velocity//FIND WAY TO GET NED VELOCITY VECTOR. This gets us descent rate and speed, which is what we need for GS control
+          local velNED = gps:velocity()
+          local des_rate = velNED:z()
+          local speed = (velNED:x())^2+(velNED:y())^2
+          local gs_current = math.atan(des_rate,speed)
+          
+          
 
       end   
    end
