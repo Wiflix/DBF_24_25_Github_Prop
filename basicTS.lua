@@ -13,7 +13,7 @@ function update()
      -- local distance_to_box_center = 1.25*3.14*50*pN
      -- local alt_ft = current_pos:alt() --/30.48; --convert cm to ft
      -- local dist_to_ground = alt_ft/math.tan(-10*3.14/180)
-      local velNED = ahrs:get_velocity_NED()
+      --local velNED = ahrs:get_velocity_NED()
       local health = ahrs:healthy()
       --gcs:send_text(0, alt_ft)
       -- gcs:send_text(0, pN)
@@ -21,7 +21,12 @@ function update()
       -- gcs:send_text(0, velNED:x())
       -- gcs:send_text(0, velNED:y())
       --gcs:send_text(0, velNED:z())
-   gcs:send_text(0, string.format("healthy:%.1f pN:%.1f vx:%.1f", healthy, 1090, 69696))
+  -- gcs:send_text(0, string.format("healthy:%.1f pN:%.1f vx:%.1f", healthy, 1090, 69696))
+  if health then
+   gcs:send_text(0,"healthy")
+  else
+   gcs:send_text(0,"unhealthy")
+  end
       --print(alt_ft)
       --print("printing alt")
   -- end
