@@ -94,8 +94,8 @@ function loc_2_pN_VanNuys(loc)
     local heading = 90--in degrees, how many degrees east of north runway is (bonus box to the right of runway if runway at 0 deg)
     local home_lat = 34.0684539 *3.14159265/180; -- in rad
     local home_long = -118.4427023*3.14159265/180 --in rad
-    local current_lat = loc.lat/1e7 * 3.14159265/180 -- in rad
-    local current_long = loc.lng/1e7 * 3.14159265/180 -- in rad
+    local current_lat = loc:lat()/1e7 * 3.14159265/180 -- in rad
+    local current_long = loc:lng()/1e7 * 3.14159265/180 -- in rad
     local R = 20903520 -- earth's radius in feet
     local delta_east = R*math.cos(home_lat)* (current_long-home_long) --distance east of home in ft.
     local delta_north = R*(current_lat-home_lat)--distance north of home in ft
@@ -107,8 +107,8 @@ function loc_2_pE_VanNuys(loc)
    local heading = 90 --in degrees, how many degrees east of north runway is (bonus box to the right of runway if runway at 0 deg)
    local home_lat = 34.0684539 *3.14159265/180 -- in rad
    local home_long = -118.4427023*3.14159265/180 --in rad
-   local current_lat = loc.lat/1e7 * 3.14159265/180 -- in rad
-   local current_long = loc.lng/1e7 * 3.14159265/180 -- in rad
+   local current_lat = loc:lat()/1e7 * 3.14159265/180 -- in rad
+   local current_long = loc:lng()/1e7 * 3.14159265/180 -- in rad
    local R = 20903520 -- earth's radius in feet
    local delta_east = R*math.cos(home_lat)* (current_long-home_long) --distance east of home in ft.
    local delta_north = R*(current_lat-home_lat)--distance north of home in ft
