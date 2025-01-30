@@ -18,29 +18,30 @@ local GS_com = -10 * math.pi/180 --glide slope command in radians (-10 deg)
 local have_target = false
 
 -- -- check key parameters
-function check_parameters()
-  --[[
-     parameter values which are auto-set on startup
-  --]]
-   local key_params = {
-      FOLL_ENABLE = 1,
-      FOLL_OFS_TYPE = 1,
-      FOLL_ALT_TYPE = 0,
-   }
+-- function check_pa rameters()
+--   --[[
+--      parameter values which are auto-set on startup
+--   --]]
+--    local key_params = {
+--       FOLL_ENABLE = 1,
+--       FOLL_OFS_TYPE = 1,
+--       FOLL_ALT_TYPE = 0,
+--    }
 
-   for p, v in pairs(key_params) do
-      local current = param:get(p)
-      assert(current, string.format("Parameter %s not found", p))
-      if math.abs(v-current) > 0.001 then
-         param:set_and_save(p, v)
-         gcs:send_text(0,string.format("Parameter %s set to %.2f was %.2f", p, v, current))
-      end
-   end
-end
+--    for p, v in pairs(key_params) do
+--       local current = param:get(p)
+--       assert(current, string.format("Parameter %s not found", p))
+--       if math.abs(v-current) > 0.001 then
+--          param:set_and_save(p, v)
+--          gcs:send_text(0,string.format("Parameter %s set to %.2f was %.2f", p, v, current))
+--       end
+--    end
+-- end
 
 
 function update()
    gcs:send_text(0, "hello, world") -- send the traditional message
+   if ahrs:
    local current_pos = ahrs:get_position() -- fetch the current position of the vehicle
    local home = ahrs:get_home()            -- fetch the home position of the vehicle
    if current_pos and home then            -- check that both a vehicle location, and home location are available
@@ -67,11 +68,11 @@ function update()
 end
 
 
-function loop()
-   update()
-   -- run at 20Hz
-   return loop, 50
-end
+-- function loop()
+--    update()
+--    -- run at 20Hz
+--    return loop, 50
+-- end
 
 --check_parameters()
 

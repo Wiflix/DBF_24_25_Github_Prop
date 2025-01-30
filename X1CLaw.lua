@@ -34,25 +34,25 @@ local GS_com = -10 * math.pi/180 --glide slope command in radians (-10 deg)
 local have_target = false
 
 -- -- check key parameters
-function check_parameters()
-  --[[
-     parameter values which are auto-set on startup
-  --]]
-   local key_params = {
-      FOLL_ENABLE = 1,
-      FOLL_OFS_TYPE = 1,
-      FOLL_ALT_TYPE = 0,
-   }
+-- function check_parameters()
+--   --[[
+--      parameter values which are auto-set on startup
+--   --]]
+--    local key_params = {
+--       FOLL_ENABLE = 1,
+--       FOLL_OFS_TYPE = 1,
+--       FOLL_ALT_TYPE = 0,
+--    }
 
-   for p, v in pairs(key_params) do
-      local current = param:get(p)
-      assert(current, string.format("Parameter %s not found", p))
-      if math.abs(v-current) > 0.001 then
-         param:set_and_save(p, v)
-         gcs:send_text(0,string.format("Parameter %s set to %.2f was %.2f", p, v, current))
-      end
-   end
-end
+--    for p, v in pairs(key_params) do
+--       local current = param:get(p)
+--       assert(current, string.format("Parameter %s not found", p))
+--       if math.abs(v-current) > 0.001 then
+--          param:set_and_save(p, v)
+--          gcs:send_text(0,string.format("Parameter %s set to %.2f was %.2f", p, v, current))
+--       end
+--    end
+-- end
 
 -- function wrap_360(angle)
 --    local res = math.fmod(angle, 360.0)
@@ -87,8 +87,22 @@ end
 --    target_pos = follow:get_target_location_and_velocity_ofs()
 -- end
 -- main update function
-function update()
 
+--vars to define PID
+
+local dr_error_prior = 0
+local dr_integral_prior = 0
+local kp = 15
+local ki = 0.8
+local kd = 16
+local k_pr = 100
+local k_phi = -40
+local bias = 0
+function update()
+   if not ahrs:healthy() then
+      gcs:send_text(0,"AHRS not healthy!")
+      return
+   end
    current_pos = ahrs:get_position()
    if not current_pos then
       return
@@ -122,27 +136,45 @@ function update()
           locNew:lng(pN_pE_VanNuys_2_lng(pN,pE))
           locNew:lat(pN_pE_VanNuys_2_lat(pN,pE))
           vehicle:set_target_location(locNew)
-         --local velNED = ahrs:get_velocity_NED() --ahrs velocity//FIND WAY TO GET NED VELOCITY VECTOR. This gets us descent rate and speed, which is what we need for GS control
-          local velNED = gps:velocity()
-          local des_rate = velNED:z()
-          local speed = (velNED:x())^2+(velNED:y())^2
-          local gs_current = math.atan(des_rate,speed)
-          
-          
 
       end   
+
+
    end
 
    -- update the target position from the follow library, which includes the offsets
-   target_pos:change_alt_frame(ALT_FRAME_ABSOLUTE)
-   vehicle:update_target_location(next_WP, target_pos)
+   --target_pos:change_alt_frame(ALT_FRAME_ABSOLUTE)
+   --vehicle:update_target_location(next_WP, target_pos)
+   local velNED = ahrs:get_velocity_NED() --ahrs velocity//FIND WAY TO GET NED VELOCITY VECTOR. This gets us descent rate and speed, which is what we need for GS control
+   --local velNED = gps:velocity()
+  --local des_rate = velNED:z()
+   local speed = (velNED:x())^2+(velNED:y())^2
+   --local gs_current = math.atan(des_rate,speed)
+   local des_rate_current = velNED:z()
+   local des_rate_target = math.tan(GS_com)*speed;
+   local dr_error = des_rate_current - des_rate_target
+   local integral = dr_integral_prior + dr_error
+   local derivative = dr_error-dr_error_prior
+   rates = ahrs:get_gyro()
+   local pitch_rate = math.deg(rates:y())
+   local phi = ahrs:get_roll()
+   --MATLAB PID:
+   local elev_rad = dr_error*kp + integral*ki + derivative*kd + pitch_rate*k_pr + math.tan(math.abs(phi))*k_phi
+   local pwm_min = 800
+   local pwm_max = 2000
+   local elev_max = 45*3.14/180
+   local elev_min = -45*3.14/180
+   local pwm_target = 800+elev_rad*(elev_max-elev_min)/(pwm_max-pwm_min)
+   SRV_Channels:set_output_pwm_chan_timeout(6, pwm_target, 1000)
+   --ki and kd might be wrong due to discrete vs cont. time, double check elevator and pwm max and min values
+
 end
 
-function loop()
-   update()
-   -- run at 20Hz
-   return loop, 50
-end
+-- function loop()
+--    update()
+--    -- run at 20Hz
+--    return loop, 50
+-- end
 
 --check_parameters()
 
