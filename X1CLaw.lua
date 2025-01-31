@@ -29,7 +29,7 @@ local ALT_FRAME_ABSOLUTE = 0
 local target_pos
 local current_pos
 local GS_com = -10 * math.pi/180 --glide slope command in radians (-10 deg)
-
+gcs:send_text(0, "hello world")
 -- -- other state
 local have_target = false
 
@@ -101,24 +101,26 @@ local bias = 0
 function update()
    if not ahrs:healthy() then
       gcs:send_text(0,"AHRS not healthy!")
-      return
+      return update(), 1000
    end
+   gcs:send_text(0,"AHRS good, update running")
    current_pos = ahrs:get_position()
    if not current_pos then
-      return
+      gcs:send_text(0,"no pos")
+      return update(), 1000
    end
 
  --  current_pos:change_alt_frame(ALT_FRAME_ABSOLUTE)
 
    if vehicle:get_mode() ~= MODE_AUTO then
-      return
+      return update()
    end
 
-   local next_WP = vehicle:get_target_location()
-   if not next_WP then
+   --local next_WP = vehicle:get_target_location()
+  -- if not next_WP then
       -- not in a flight mode with a target location
-      return
-   end
+   --   return
+  -- end
    if turnFlag==0 then
       local pN = loc_2_pN_VanNuys(current_pos)
       local pE = loc_2_pE_VanNuys(current_pos)
@@ -135,7 +137,32 @@ function update()
           local locNew = current_pos--Location(pN_pE_VanNuys_2_lat(pN,pE),pN_pE_VanNuys_2_lng(pN,pE), new_Alt, altFrame);
           locNew:lng(pN_pE_VanNuys_2_lng(pN,pE))
           locNew:lat(pN_pE_VanNuys_2_lat(pN,pE))
-          vehicle:set_target_location(locNew)
+         -- vehicle:set_target_location(locNew)
+          local wp = mission:get_item(1)  
+	
+          -- local instance = gps:primary_sensor()
+            --local position = gps:location(instance)
+           -- local position = ahrs:get_position()
+       
+           if (not wp) then
+             gcs:send_text(0, "no homepoint set!")
+               return update()
+           end
+           
+           --if (not position) then
+             ----gcs:send_text(0, "no position data!")
+            --   return false
+           --end
+          
+           -- gcs:send_text(0, mission:num_commands())
+           
+           --wp:command(LAND)
+           wp:x(341756750)
+           wp:y(-1184813476)
+           wp:z(20)  
+       
+           -- mission:set_item(mission:num_commands(), wp)
+           mission:set_item(1, wp)
 
       end   
 
@@ -148,26 +175,30 @@ function update()
    local velNED = ahrs:get_velocity_NED() --ahrs velocity//FIND WAY TO GET NED VELOCITY VECTOR. This gets us descent rate and speed, which is what we need for GS control
    --local velNED = gps:velocity()
   --local des_rate = velNED:z()
-   local speed = (velNED:x())^2+(velNED:y())^2
+   if not velNED then 
+      gcs:send_text(0, "no vel")
+      return update()
+   end
+   local speed = math.sqrt(velNED:x()^2 + velNED:y()^2)
    --local gs_current = math.atan(des_rate,speed)
    local des_rate_current = velNED:z()
    local des_rate_target = math.tan(GS_com)*speed;
    local dr_error = des_rate_current - des_rate_target
    local integral = dr_integral_prior + dr_error
    local derivative = dr_error-dr_error_prior
-   rates = ahrs:get_gyro()
+   local rates = ahrs:get_gyro()
    local pitch_rate = math.deg(rates:y())
    local phi = ahrs:get_roll()
    --MATLAB PID:
    local elev_rad = dr_error*kp + integral*ki + derivative*kd + pitch_rate*k_pr + math.tan(math.abs(phi))*k_phi
-   local pwm_min = 800
+   local pwm_min = 1000
    local pwm_max = 2000
    local elev_max = 45*3.14/180
    local elev_min = -45*3.14/180
    local pwm_target = 800+elev_rad*(elev_max-elev_min)/(pwm_max-pwm_min)
    SRV_Channels:set_output_pwm_chan_timeout(6, pwm_target, 1000)
    --ki and kd might be wrong due to discrete vs cont. time, double check elevator and pwm max and min values
-
+   return update, 50
 end
 
 -- function loop()
@@ -195,8 +226,8 @@ end
 --NOTE: pN and pE aren't actually N/E positions. They are defined relative to the runway position and orientation. pN is along runway with bonus box to the right, and pE is 90 deg of that
 function loc_2_pN_VanNuys(loc)
     local heading = -38.09 --in degrees, how many degrees east of north runway is (bonus box to the right of runway if runway at 0 deg)
-    local home_lat = 34.17535989 *3.14159265/180; -- in rad
-    local home_long = -118.4818518*3.14159265/180 --in rad
+    local home_lat = 34.1752756 *3.14159265/180 -- in rad
+    local home_long = -118.4811115*3.14159265/180 --in rad
     local current_lat = loc:lat()/1e7 * 3.14159265/180 -- in rad
     local current_long = loc:lng()/1e7 * 3.14159265/180 -- in rad
     local R = 20903520 -- earth's radius in feet
@@ -208,8 +239,8 @@ end
 
 function loc_2_pE_VanNuys(loc)
    local heading = -38.09 --in degrees, how many degrees east of north runway is (bonus box to the right of runway if runway at 0 deg)
-   local home_lat = 34.17535989 *3.14159265/180 -- in rad
-   local home_long = -118.4818518*3.14159265/180 --in rad
+   local home_lat = 34.1752756 *3.14159265/180 -- in rad
+   local home_long = -118.4811115*3.14159265/180 --in rad
    local current_lat = loc:lat()/1e7 * 3.14159265/180 -- in rad
    local current_long = loc:lng()/1e7 * 3.14159265/180 -- in rad
    local R = 20903520 -- earth's radius in feet
@@ -221,8 +252,8 @@ end
 
 function pN_pE_VanNuys_2_lng(pN, pE)
     local heading = -38.09 --in degrees, how many degrees east of north runway is (bonus box to the right of runway if runway at 0 deg)
-    local home_lat = 34.17535989 *3.14159265/180 -- in rad
-    local home_long = -118.4818518*3.14159265/180 --in rad
+    local home_lat = 34.1752756 *3.14159265/180 -- in rad
+    local home_long = -118.4811115*3.14159265/180 --in rad
     local R = 20903520 -- earth's radius in feet
     local delta_east = pE*math.cos(heading)+pN*math.sin(heading)
     --delta_north = -pN*sin(heading)+pN*cos(heading);
@@ -232,8 +263,8 @@ end
 
 function pN_pE_VanNuys_2_lat(pN, pE)
     local heading = -38.09 --in degrees, how many degrees east of north runway is (bonus box to the right of runway if runway at 0 deg)
-    local home_lat = 34.17535989 *3.14159265/180 -- in rad
-    local ome_long = -118.4818518*3.14159265/180 --in rad
+    local home_lat = 34.1752756 *3.14159265/180 -- in rad
+    local home_long = -118.4811115*3.14159265/180 --in rad
     local R = 20903520 -- earth's radius in feet
     --delta_east = pE*cos(heading)+pN*sin(heading);
     local delta_north = -pN*math.sin(heading)+pN*math.cos(heading)

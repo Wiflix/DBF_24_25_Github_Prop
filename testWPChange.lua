@@ -9,11 +9,11 @@ function update()
   local armed = arming:is_armed()
   if (armed and flag) then
     local timenow = millis()
-    while timenow+10000<millis() do
+    while timenow+3000<millis() do
       --wait 10 seconds after arming before replacing waypoint
     end
 
-    local wp = mission:get_item(0)  
+    local wp = mission:get_item(1)  
 	
    -- local instance = gps:primary_sensor()
 	  --local position = gps:location(instance)
@@ -32,8 +32,8 @@ function update()
 	 -- gcs:send_text(0, mission:num_commands())
     
     wp:command(LAND)
-    wp:x(341753598)
-    wp:y(-1184427023)
+    wp:x(341756750)
+    wp:y(-1184813476)
     wp:z(0)  
 
     -- mission:set_item(mission:num_commands(), wp)

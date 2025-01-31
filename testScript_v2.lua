@@ -148,5 +148,5 @@ end
 
 -- start running update loop
 --return protected_wrapper()
-return update, 1000
+return update()
 
