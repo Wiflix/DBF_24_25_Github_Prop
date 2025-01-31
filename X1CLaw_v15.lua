@@ -43,24 +43,24 @@ function wrap_180(angle)
 end
 
 -- Update target state
--- function update_target()
---     if not follow or not follow.have_target or not follow:get_target_location_and_velocity_ofs() then
---         gcs:send_text(0, "Follow system not available!")
---         return
---     end
---     if not follow:have_target() then
---         if have_target then
---             gcs:send_text(0, "Lost beacon")
---         end
---         have_target = false
---         return
---     end
---     if not have_target then
---         gcs:send_text(0, "Have beacon")
---     end
---     have_target = true
---     target_pos = follow:get_target_location_and_velocity_ofs()
--- end
+function update_target()
+    if not follow or not follow.have_target or not follow:get_target_location_and_velocity_ofs then
+        gcs:send_text(0, "Follow system not available!")
+        return
+    end
+    if not follow:have_target() then
+        if have_target then
+            gcs:send_text(0, "Lost beacon")
+        end
+        have_target = false
+        return
+    end
+    if not have_target then
+        gcs:send_text(0, "Have beacon")
+    end
+    have_target = true
+    target_pos = follow:get_target_location_and_velocity_ofs()
+end
 
 function update()
     if not ahrs or not ahrs.healthy then
@@ -135,53 +135,6 @@ function protected_wrapper()
         return protected_wrapper, 1000
     end
     return protected_wrapper, 50
-end
-function loc_2_pN_VanNuys(loc)
-    local heading = -38.09 --in degrees, how many degrees east of north runway is (bonus box to the right of runway if runway at 0 deg)
-    local home_lat = 34.1752756 *3.14159265/180 -- in rad
-    local home_long = -118.4811115*3.14159265/180 --in rad
-    local current_lat = loc:lat()/1e7 * 3.14159265/180 -- in rad
-    local current_long = loc:lng()/1e7 * 3.14159265/180 -- in rad
-    local R = 20903520 -- earth's radius in feet
-    local delta_east = R*math.cos(home_lat)* (current_long-home_long) --distance east of home in ft.
-    local delta_north = R*(current_lat-home_lat)--distance north of home in ft
-    local pN = -delta_east*math.sin(-heading)+delta_north*math.cos(-heading)
-    return pN;
-end
-
-function loc_2_pE_VanNuys(loc)
-   local heading = -38.09 --in degrees, how many degrees east of north runway is (bonus box to the right of runway if runway at 0 deg)
-   local home_lat = 34.1752756 *3.14159265/180 -- in rad
-   local home_long = -118.4811115*3.14159265/180 --in rad
-   local current_lat = loc:lat()/1e7 * 3.14159265/180 -- in rad
-   local current_long = loc:lng()/1e7 * 3.14159265/180 -- in rad
-   local R = 20903520 -- earth's radius in feet
-   local delta_east = R*math.cos(home_lat)* (current_long-home_long) --distance east of home in ft.
-   local delta_north = R*(current_lat-home_lat)--distance north of home in ft
-   local pE = delta_east*math.cos(-heading)+delta_north*math.sin(-heading);
-    return pE;
-end
-
-function pN_pE_VanNuys_2_lng(pN, pE)
-    local heading = -38.09 --in degrees, how many degrees east of north runway is (bonus box to the right of runway if runway at 0 deg)
-    local home_lat = 34.1752756 *3.14159265/180 -- in rad
-    local home_long = -118.4811115*3.14159265/180 --in rad
-    local R = 20903520 -- earth's radius in feet
-    local delta_east = pE*math.cos(heading)+pN*math.sin(heading)
-    --delta_north = -pN*sin(heading)+pN*cos(heading);
-    local current_long = home_long+delta_east/(R*math.cos(home_lat))
-    return math.floor(current_long*1e7*180/3.14159265)
-end
-
-function pN_pE_VanNuys_2_lat(pN, pE)
-    local heading = -38.09 --in degrees, how many degrees east of north runway is (bonus box to the right of runway if runway at 0 deg)
-    local home_lat = 34.1752756 *3.14159265/180 -- in rad
-    local home_long = -118.4811115*3.14159265/180 --in rad
-    local R = 20903520 -- earth's radius in feet
-    --delta_east = pE*cos(heading)+pN*sin(heading);
-    local delta_north = -pN*math.sin(heading)+pN*math.cos(heading)
-    local current_lat = home_lat+delta_north/R
-    return math.floor(current_lat*1e7*180/3.1415926)
 end
 
 return protected_wrapper()
