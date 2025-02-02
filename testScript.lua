@@ -41,7 +41,6 @@ local have_target = false
 
 function update()
    gcs:send_text(0, "hello, world") -- send the traditional message
-   if ahrs:
    local current_pos = ahrs:get_position() -- fetch the current position of the vehicle
    local home = ahrs:get_home()            -- fetch the home position of the vehicle
    if current_pos and home then            -- check that both a vehicle location, and home location are available
