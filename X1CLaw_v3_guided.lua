@@ -35,6 +35,10 @@ local heading = -38.5 --in degrees, how many degrees east of north runway is (bo
 local R = 20903520 -- earth's radius in feet
 
 function update()
+    if vehicle:get_mode() ~= MODE_GUIDED then
+        gcs:send_text(0,"not in guided")
+        return update, 1000
+     end
     if not ahrs or not ahrs.healthy then
         gcs:send_text(0, "AHRS module unavailable!")
         return update, 1000
@@ -64,22 +68,33 @@ function update()
         local target_pos_1 = current_pos --"far" waypoint 
         local pN = loc_2_pN_VanNuys(current_pos)
         local pE = loc_2_pE_VanNuys(current_pos)
-        local alt_ft = current_pos:alt()*3.28 -- in ft
+        --local alt_ft = current_pos:alt()*3.28 -- in ft
+        local dist = ahrs:get_relative_position_NED_home()
+        local alt_ft = -1*dist:z()*3.28
         local delta_pN_req = alt_ft / math.tan(-GS_com)
         target_pos_1:lng(pN_pE_VanNuys_2_lng(pN+delta_pN_req, pE))
         target_pos_1:lat(pN_pE_VanNuys_2_lat(pN+delta_pN_req, pE))
-        target_pos_1:alt(0)
+        local temp = target_pos_1:alt()
+        target_pos_1:alt(temp+100*dist:z()) -- should set it to 0 in its own frame, in cm
         vehicle:set_target_location(target_pos_1)
         initFlag = 1
+        gcs:send_text(0,"init")
     end
     -- Turn decision logic
     if turnFlag == 0 then
         local pN = loc_2_pN_VanNuys(current_pos)
         local pE = loc_2_pE_VanNuys(current_pos)
         local distance_to_box_center = 1.25 * math.pi * 50 + pN --1.25 factor can be modified depending on performance. It's an estimate to how much wider the turn will be than a perfect semi-circle
-        local alt_ft = current_pos:alt()*3.28 -- in ft
+       -- local alt_ft = current_pos:alt()*3.28 -- in ft
+        local dist = ahrs:get_relative_position_NED_home()
+        local alt_ft = -1*dist:z()*3.28
         local dist_to_ground = alt_ft / math.tan(-GS_com)
-        if math.abs(distance_to_box_center - dist_to_ground) < 50 then
+       -- gcs:send_text(0, string.format("pN: %s", tostring(pN)))
+       -- gcs:send_text(0, string.format("pE: %s", tostring(pE)))
+       -- gcs:send_text(0, string.format("Alt_ft: %s", tostring(alt_ft)))
+       -- gcs:send_text(0, string.format("DTG: %s", tostring(dist_to_ground)))
+       -- gcs:send_text(0, string.format("DTBC: %s", tostring(distance_to_box_center)))
+        if (dist_to_ground - distance_to_box_center) < 50 then
             turnFlag = 1
             --considering deleting this entire block and going straight to the turn flag 1 case (set target location immediately to bonus box)
             local wpNew_pE = 150
@@ -91,6 +106,7 @@ function update()
             locNew:lat(pN_pE_VanNuys_2_lat(wpNew_pN, wpNew_pE))
             locNew:alt(new_alt)
             vehicle:set_target_location(locNew)
+            gcs:send_text(0,"TF1")
         end
     elseif turnFlag == 1 then
         local dist_targ = current_pos:get_distance(locNew) -- dist in m
@@ -101,6 +117,7 @@ function update()
             locBB:alt(0)
             vehicle:set_target_location(locBB)
             turnFlag = 2
+            gcs:send_text(0,"TF2")
         end
     end
 

@@ -40,6 +40,10 @@ file:write("FirstLine Test")
 file:close()
 
 function update()
+    if vehicle:get_mode() ~= MODE_GUIDED then
+        gcs:send_text(0,"not in guided")
+        return update, 1000
+     end
     if not ahrs or not ahrs.healthy then
         gcs:send_text(0, "AHRS module unavailable!")
         return update, 1000
@@ -53,6 +57,11 @@ function update()
     if not current_pos then
         return update, 1000
     end
+
+    --local current_pos_gps = gps:location()
+    --if not current_pos_gps then
+    --    return update, 1000
+  -- end
 
     if vehicle:get_mode() ~= MODE_GUIDED then
         return update, 1000
@@ -69,19 +78,24 @@ function update()
         local target_pos_1 = current_pos --"far" waypoint 
         local pN = loc_2_pN_VanNuys(current_pos)
         local pE = loc_2_pE_VanNuys(current_pos)
-        local alt_ft = current_pos:alt()*3.28 -- in ft
+       -- local alt_ft = current_pos:alt()*3.28/100-430+24 -- in ft
+        local dist = ahrs:get_relative_position_NED_home()
+        local alt_ft = -1*dist:z()
         gcs:send_text(0, string.format("pN: %s", tostring(pN)))
         gcs:send_text(0, string.format("pE: %s", tostring(pE)))
         gcs:send_text(0, string.format("Alt_ft: %s", tostring(alt_ft)))
-        file = io.open("logTest.txt","a")
-        myText = "\nHello"
-        file:write(tostring(millis()))
-        file:write(string.format("pN: %s", tostring(pN)))
-        file:write(string.format("pE: %s", tostring(pE)))
-        file:write(string.format("Alt_ft: %s", tostring(alt_ft)))
+       -- file = io.open("logTest.txt","a")
+       -- myText = "\nHello"
+       -- file:write(tostring(millis()))
+       -- file:write(string.format("pN: %s", tostring(pN)))
+       -- file:write(string.format("pE: %s", tostring(pE)))
+        --file:write(string.format("Alt_ft: %s", tostring(alt_ft)))
         --alternative:
        -- file:write(tostring(millis()) .. "\n" .. string.format("pN: %s", tostring(pN)) .. "\n" .. string.format("pE: %s", tostring(pE)) .. "\n" .. string.format("Alt_ft: %s", tostring(alt_ft)))
-        file:close()
+     if log and log.write then
+        log:write("pN", pN)
+     end
+
 end
 
 function protected_wrapper()
