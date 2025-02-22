@@ -53,9 +53,9 @@ function update()
         return update, 1000
     end
 
- --   if vehicle:get_mode() ~= MODE_GUIDED then
-      --  return update, 1000
-    --end
+    if vehicle:get_mode() ~= MODE_GUIDED then
+        return update, 1000
+    end
 
     -- local next_WP = vehicle:get_target_location()
     -- if not next_WP then
@@ -74,8 +74,6 @@ function update()
         local delta_pN_req = alt_ft / math.tan(-GS_com)
         target_pos_1:lng(pN_pE_VanNuys_2_lng(pN+delta_pN_req, pE))
         target_pos_1:lat(pN_pE_VanNuys_2_lat(pN+delta_pN_req, pE))
-        --target_pos_1:lng(pN_pE_VanNuys_2_lng(-5000, 0))
-        --target_pos_1:lat(pN_pE_VanNuys_2_lat(-5000, 0))
         local temp = target_pos_1:alt()
         target_pos_1:alt(temp+100*dist:z()) -- should set it to 0 in its own frame, in cm
         vehicle:set_target_location(target_pos_1)
@@ -86,7 +84,7 @@ function update()
     if turnFlag == 0 then
         local pN = loc_2_pN_VanNuys(current_pos)
         local pE = loc_2_pE_VanNuys(current_pos)
-        local distance_to_box_center = 1.25 * math.pi * 50 + pN --1.25 factor can be modified depending on performance. It's an estimate to how much wider the turn will be than a perfect semi-circle
+        local distance_to_box_center = 1.25 * math.pi * 50 + -1*pN --1.25 factor can be modified depending on performance. It's an estimate to how much wider the turn will be than a perfect semi-circle
        -- local alt_ft = current_pos:alt()*3.28 -- in ft
         local dist = ahrs:get_relative_position_NED_home()
         local alt_ft = -1*dist:z()*3.28
@@ -100,7 +98,7 @@ function update()
             turnFlag = 1
             --considering deleting this entire block and going straight to the turn flag 1 case (set target location immediately to bonus box)
             local wpNew_pE = 150
-            local wpNew_pN = pN - 100
+            local wpNew_pN = pN + 100
             local delta_alt = 15 -- in m. This is a guess to how much the glider will bleed altitude during the turn. Experiment with different values
             local new_alt = current_pos:alt()-delta_alt -- in m 
             locNew = current_pos
@@ -127,14 +125,14 @@ function update()
         
 end
 
--- function protected_wrapper()
---     local success, err = pcall(update)
---     if not success then
---         gcs:send_text(0, "Internal Error: " .. err)
---         return nil
---     end
---     return protected_wrapper, 50
--- end
+function protected_wrapper()
+    local success, err = pcall(update)
+    if not success then
+        gcs:send_text(0, "Internal Error: " .. err)
+        return nil
+    end
+    return protected_wrapper, 50
+end
 function loc_2_pN_VanNuys(loc)
     local current_lat = loc:lat()/1e7 * 3.14159265/180 -- in rad
     local current_long = loc:lng()/1e7 * 3.14159265/180 -- in rad
@@ -168,4 +166,4 @@ function pN_pE_VanNuys_2_lat(pN, pE)
     return math.floor(current_lat*1e7*180/3.1415926)
 end
 
-return update()
+return protected_wrapper()

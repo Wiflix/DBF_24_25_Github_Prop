@@ -35,7 +35,7 @@ local heading = -38.5 --in degrees, how many degrees east of north runway is (bo
 local R = 20903520 -- earth's radius in feet
 
 function update()
-    if vehicle:get_mode() ~= MODE_GUIDED then
+    if vehicle:get_mode() ~= MODE_AUTO then
         gcs:send_text(0,"not in guided")
         return update, 1000
      end
@@ -50,6 +50,7 @@ function update()
 
     current_pos = ahrs:get_position()
     if not current_pos then
+        gcs:send_text(0, "no currentpos")
         return update, 1000
     end
 
@@ -62,7 +63,7 @@ function update()
     --     return update, 1000
     -- end
 
-
+    --gcs:send_text(0, "test1")
     --this block of code runs first. Sets initial "target" position as soon as altitude is available in order to define glideslope. Only runs once
     if initFlag == 0 then
         local target_pos_1 = current_pos --"far" waypoint 
@@ -74,11 +75,22 @@ function update()
         local delta_pN_req = alt_ft / math.tan(-GS_com)
         target_pos_1:lng(pN_pE_VanNuys_2_lng(pN+delta_pN_req, pE))
         target_pos_1:lat(pN_pE_VanNuys_2_lat(pN+delta_pN_req, pE))
-        --target_pos_1:lng(pN_pE_VanNuys_2_lng(-5000, 0))
-        --target_pos_1:lat(pN_pE_VanNuys_2_lat(-5000, 0))
-        local temp = target_pos_1:alt()
-        target_pos_1:alt(temp+100*dist:z()) -- should set it to 0 in its own frame, in cm
-        vehicle:set_target_location(target_pos_1)
+        --target_pos_1:lng(pN_pE_VanNuys_2_lng(500, 0))
+        --target_pos_1:lat(pN_pE_VanNuys_2_lat(500, 0))
+        --local temp = target_pos_1:alt()
+        local wp = mission:get_item(1)
+        local temp = wp:z()
+      --  target_pos_1:alt(temp+100*dist:z()) -- should set it to 0 in its own frame, in cm
+    
+        --wp:x(pN_pE_VanNuys_2_lng(pN+delta_pN_req, pE))
+        --wp:y(pN_pE_VanNuys_2_lat(pN+delta_pN_req, pE))
+
+        wp:x(pN_pE_VanNuys_2_lng(0, 300))
+        wp:y(pN_pE_VanNuys_2_lat(0, 300))
+       -- wp:z(temp+100*dist:z())
+        wp:z(0)
+        --vehicle:set_target_location(target_pos_1)
+        mission:set_item(1, wp)
         initFlag = 1
         gcs:send_text(0,"init")
     end
@@ -107,34 +119,41 @@ function update()
             locNew:lng(pN_pE_VanNuys_2_lng(wpNew_pN, wpNew_pE))
             locNew:lat(pN_pE_VanNuys_2_lat(wpNew_pN, wpNew_pE))
             locNew:alt(new_alt)
-            vehicle:set_target_location(locNew)
+          --  vehicle:set_target_location(locNew)
+            local wp2 = mission:get_item(1)
+            local temp = wp2:z()
+            wp2:x(pN_pE_VanNuys_2_lng(wpNew_pN, wpNew_pE))
+            wp2:y(pN_pE_VanNuys_2_lat(wpNew_pN, wpNew_pE))
+            wp2:z(new_alt)
+            mission:set_item(1, wp2)
             gcs:send_text(0,"TF1")
         end
-    elseif turnFlag == 1 then
-        local dist_targ = current_pos:get_distance(locNew) -- dist in m
-        if math.abs(dist_targ)<15 then
-            local locBB = locNew
-            locBB:lng(pN_pE_VanNuys_2_lng(0, 100))
-            locBB:lat(pN_pE_VanNuys_2_lat(0, 100))
-            locBB:alt(0)
-            vehicle:set_target_location(locBB)
-            turnFlag = 2
-            gcs:send_text(0,"TF2")
-        end
     end
+    -- elseif turnFlag == 1 then
+    --     local dist_targ = current_pos:get_distance(locNew) -- dist in m
+    --     if math.abs(dist_targ)<15 then
+    --         local locBB = locNew
+    --         locBB:lng(pN_pE_VanNuys_2_lng(0, 100))
+    --         locBB:lat(pN_pE_VanNuys_2_lat(0, 100))
+    --         locBB:alt(0)
+    --         vehicle:set_target_location(locBB)
+    --         turnFlag = 2
+    --         gcs:send_text(0,"TF2")
+    --     end
+    -- end
 
 
-        
+    
 end
 
--- function protected_wrapper()
---     local success, err = pcall(update)
---     if not success then
---         gcs:send_text(0, "Internal Error: " .. err)
---         return nil
---     end
---     return protected_wrapper, 50
--- end
+function protected_wrapper()
+    local success, err = pcall(update)
+    if not success then
+        gcs:send_text(0, "Internal Error: " .. err)
+        return nil
+    end
+    return protected_wrapper, 50
+end
 function loc_2_pN_VanNuys(loc)
     local current_lat = loc:lat()/1e7 * 3.14159265/180 -- in rad
     local current_long = loc:lng()/1e7 * 3.14159265/180 -- in rad
@@ -168,4 +187,4 @@ function pN_pE_VanNuys_2_lat(pN, pE)
     return math.floor(current_lat*1e7*180/3.1415926)
 end
 
-return update()
+return protected_wrapper()
