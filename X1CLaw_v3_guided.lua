@@ -42,8 +42,10 @@ function update()
     if not ahrs or not ahrs.healthy then
         gcs:send_text(0, "AHRS module unavailable!")
         return update, 1000
+
     end
     if not ahrs:healthy() then
+        
         gcs:send_text(0, "AHRS not healthy!")
         return update, 1000
     end
@@ -96,6 +98,7 @@ function update()
         gcs:send_text(0, string.format("Alt_ft: %s", tostring(alt_ft)))
         gcs:send_text(0, string.format("DTG: %s", tostring(dist_to_ground)))
         gcs:send_text(0, string.format("DTBC: %s", tostring(distance_to_box_center)))
+        logger:write("Custom", "pN,pE,altft,DB,DG", "ffff",pN,pE,alt_ft,dist_to_ground,distance_to_box_center)
         if (dist_to_ground - distance_to_box_center) < 50 then
             turnFlag = 1
             --considering deleting this entire block and going straight to the turn flag 1 case (set target location immediately to bonus box)
@@ -112,17 +115,32 @@ function update()
         end
     elseif turnFlag == 1 then
         local dist_targ = current_pos:get_distance(locNew) -- dist in m
-        if math.abs(dist_targ)<15 then
+       -- if math.abs(dist_targ)<15 then
+       local pN = loc_2_pN_VanNuys(current_pos)
+       local pE = loc_2_pE_VanNuys(current_pos)
+       gcs:send_text(0, string.format("pN1: %s", tostring(pN)))
+       gcs:send_text(0, string.format("pE1: %s", tostring(pE)))
+       logger:write("Custom", "pN,pE,altft,DB,DG", "ffff",pN,pE,0,0,0)
+        if true then
             local locBB = locNew
-            locBB:lng(pN_pE_VanNuys_2_lng(0, 100))
+          --  locBB:lng(pN_pE_VanNuys_2_lng(0, 100))
+            locBB:lng(home_long)
             locBB:lat(pN_pE_VanNuys_2_lat(0, 100))
             locBB:alt(0)
             vehicle:set_target_location(locBB)
             turnFlag = 2
             gcs:send_text(0,"TF2")
+            gcs:send_text(0, string.format("Target location lng: %s", vehicle:get_target_location():lng()))
+            gcs:send_text(0, string.format("Target location lat: %s", vehicle:get_target_location():lat()))
         end
     end
-
+    if turnFlag == 2 then
+        local pN = loc_2_pN_VanNuys(current_pos)
+        local pE = loc_2_pE_VanNuys(current_pos)
+        gcs:send_text(0, string.format("pN2: %s", tostring(pN)))
+        gcs:send_text(0, string.format("pE2: %s", tostring(pE)))
+        logger:write("Custom", "pN,pE,altft,DB,DG", "ffff",pN,pE,0,0,0)
+    end
 
         
 end
