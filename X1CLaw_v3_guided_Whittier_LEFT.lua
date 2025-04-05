@@ -1,3 +1,4 @@
+--COORDS SET FOR WHITTIER AIRFIELD
 -- Support follow in GUIDED mode in plane
 --IMPORTANT FOR THIS TO WORK: Make sure to turn SpdWeight is set to 0. Set min airspeed to 1.2*stall speed to make sure x1 doesn't stall
 local PARAM_TABLE_KEY = 11
