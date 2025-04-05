@@ -30,9 +30,9 @@ local k_phi = -40
 local bias = 0
 
 --location home
-local home_lat = 34.1749737 *3.14159265/180 -- in rad
-local home_long = -118.4814977*3.14159265/180 --in rad
-local heading = -38.5 --in degrees, how many degrees east of north runway is (bonus box to the right of runway if runway at 0 deg)
+local home_lat = 34.0442899 *3.14159265/180 -- in rad
+local home_long = -118.0705457*3.14159265/180 --in rad
+local heading = -155.9 --in degrees, how many degrees east of north runway is (bonus box to the right of runway if runway at 0 deg)
 local R = 20903520 -- earth's radius in feet
 
 function update()
@@ -90,7 +90,7 @@ function update()
     if turnFlag == 0 then
         local pN = loc_2_pN_VanNuys(current_pos)
         local pE = loc_2_pE_VanNuys(current_pos)
-        local distance_to_box_center = 1.25 * math.pi * 50 + pN --1.25 factor can be modified depending on performance. It's an estimate to how much wider the turn will be than a perfect semi-circle
+        local distance_to_box_center = 1.25 * math.pi * 50 - pN --1.25 factor can be modified depending on performance. It's an estimate to how much wider the turn will be than a perfect semi-circle
        -- local alt_ft = current_pos:alt()*3.28 -- in ft
         local dist = ahrs:get_relative_position_NED_home()
         local alt_ft = -1*dist:z()*3.28
@@ -100,7 +100,7 @@ function update()
         gcs:send_text(0, string.format("Alt_ft: %s", tostring(alt_ft)))
         gcs:send_text(0, string.format("DTG: %s", tostring(dist_to_ground)))
         gcs:send_text(0, string.format("DTBC: %s", tostring(distance_to_box_center)))
-        logger:write("CST", "pN,pE,altft,DB,DG", "fffff",pN,pE,alt_ft,dist_to_ground,distance_to_box_center)
+        logger:write("CST", "pN,pE,altft,DB,DG", "fffff",pN,pE,alt_ft,distance_to_box_center,dist_to_ground)
         if stupid_error_flag==0 then
             stupid_error_flag =1
             gcs:send_text(0, "stupid error flag")

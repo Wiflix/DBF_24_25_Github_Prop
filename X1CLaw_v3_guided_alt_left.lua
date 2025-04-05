@@ -32,7 +32,7 @@ local bias = 0
 --location home
 local home_lat = 34.1749737 *3.14159265/180 -- in rad
 local home_long = -118.4814977*3.14159265/180 --in rad
-local heading = -38.5*3.14159265/180 --in degrees, how many degrees east of north runway is (bonus box to the right of runway if runway at 0 deg)
+local heading = -38.5*3.14159265/180 --in radians, how many degrees east of north runway is (bonus box to the right of runway if runway at 0 deg)
 local R = 20903520 -- earth's radius in feet
 
 function update()
@@ -76,8 +76,8 @@ function update()
         local dist = ahrs:get_relative_position_NED_home()
         local alt_ft = -1*dist:z()*3.28
         local delta_pN_req = alt_ft / math.tan(-GS_com)
-        target_pos_1:lng(pN_pE_VanNuys_2_lng(pN+delta_pN_req, pE))
-        target_pos_1:lat(pN_pE_VanNuys_2_lat(pN+delta_pN_req, pE))
+        target_pos_1:lng(pN_pE_VanNuys_2_lng(pN-delta_pN_req, pE))
+        target_pos_1:lat(pN_pE_VanNuys_2_lat(pN-delta_pN_req, pE))
         --target_pos_1:lng(pN_pE_VanNuys_2_lng(-5000, 0))
         --target_pos_1:lat(pN_pE_VanNuys_2_lat(-5000, 0))
         local temp = target_pos_1:alt()
@@ -90,7 +90,7 @@ function update()
     if turnFlag == 0 then
         local pN = loc_2_pN_VanNuys(current_pos)
         local pE = loc_2_pE_VanNuys(current_pos)
-        local distance_to_box_center = 1.25 * math.pi * 50 + pN --1.25 factor can be modified depending on performance. It's an estimate to how much wider the turn will be than a perfect semi-circle
+        local distance_to_box_center = 1.25 * math.pi * 50 - pN --1.25 factor can be modified depending on performance. It's an estimate to how much wider the turn will be than a perfect semi-circle
        -- local alt_ft = current_pos:alt()*3.28 -- in ft
         local dist = ahrs:get_relative_position_NED_home()
         local alt_ft = -1*dist:z()*3.28
@@ -110,7 +110,7 @@ function update()
             turnFlag = 1
             --considering deleting this entire block and going straight to the turn flag 1 case (set target location immediately to bonus box)
             local wpNew_pE = 150
-            local wpNew_pN = pN - 100
+            local wpNew_pN = pN + 100
             local delta_alt = 15 -- in m. This is a guess to how much the glider will bleed altitude during the turn. Experiment with different values
             local new_alt = current_pos:alt()-delta_alt -- in m 
             locNew = current_pos

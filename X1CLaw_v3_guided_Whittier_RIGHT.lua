@@ -1,3 +1,4 @@
+--COORDS SET FOR WHITTIER AIRFIELD
 -- Support follow in GUIDED mode in plane
 --IMPORTANT FOR THIS TO WORK: Make sure to turn SpdWeight is set to 0. Set min airspeed to 1.2*stall speed to make sure x1 doesn't stall
 local PARAM_TABLE_KEY = 11
@@ -30,9 +31,9 @@ local k_phi = -40
 local bias = 0
 
 --location home
-local home_lat = 34.1749737 *3.14159265/180 -- in rad
-local home_long = -118.4814977*3.14159265/180 --in rad
-local heading = -38.5*3.14159265/180 --in degrees, how many degrees east of north runway is (bonus box to the right of runway if runway at 0 deg)
+local home_lat = 34.0442899 *3.14159265/180 -- in rad
+local home_long = -118.0705457*3.14159265/180 --in rad
+local heading = -155.9 --in degrees, how many degrees east of north runway is (bonus box to the right of runway if runway at 0 deg)
 local R = 20903520 -- earth's radius in feet
 
 function update()
